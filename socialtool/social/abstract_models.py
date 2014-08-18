@@ -1,5 +1,5 @@
-from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
 from socialtool.loading import get_classes, get_model
 
 SocialPostManager, AllSocialPostManager = get_classes('social.managers', ('SocialPostManager', 'AllSocialPostManager'))
@@ -95,6 +95,17 @@ class AbstractSearchTerm(models.Model):
         abstract = True
 
 
+class AbstractForbiddenWord(models.Model):
+    word = models.CharField(max_length=100)
+    level = models.IntegerField()
+
+    def __unicode__(self):
+        return self.word
+
+    class Meta:
+        abstract = True
+
+
 class AbstractSocialPost(models.Model):
     created_at = models.DateTimeField()
     created_at.verbose_name = 'Post date'
@@ -134,6 +145,8 @@ class AbstractSocialPost(models.Model):
     objects = SocialPostManager()
     everything = AllSocialPostManager()
 
+    swearword_level = models.IntegerField(null=True)
+
     def __unicode__(self):
         return u'{0} - {1} ({2})'.format(self.handle, self.account.type, self.messaged)
 
@@ -151,5 +164,3 @@ class AbstractSocialPost(models.Model):
             attach an image but should be ok
         """
         return get_model('social','socialpost').everything.filter(handle=self.handle).exclude(image_url=None).exclude(uid=self.uid).count()
-
-

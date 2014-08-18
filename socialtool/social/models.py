@@ -3,7 +3,7 @@ from socialtool.social import abstract_models
 
 class MarketAccount(abstract_models.AbstractMarketAccount):
     pass
-    
+
 
 class Message(abstract_models.AbstractMessage):
     pass
@@ -22,4 +22,8 @@ class SearchTerm(abstract_models.AbstractSearchTerm):
 
 
 class SocialPost(abstract_models.AbstractSocialPost):
+    pass
+
+
+class ForbiddenWord(abstract_models.AbstractForbiddenWord):
     pass

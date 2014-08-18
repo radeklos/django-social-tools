@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import pickle
-
 from optparse import make_option
 
-from django.core.management.base import BaseCommand
-from django.db.utils import IntegrityError, DataError
-from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.management.base import BaseCommand
+from django.db.utils import DataError, IntegrityError
 from socialtool.loading import get_class, get_model
+from socialtool.social.management.utils import get_containing_words
 
 SocialSearchFacade = get_class('social.facades', 'SocialSearchFacade')
 
@@ -38,6 +38,9 @@ class Command(BaseCommand):
         """
 
         terms = get_model('social', 'searchterm').objects.filter(active=True)
+        forbidden_words = get_model('social', 'forbiddenword') \
+            .objects.all().values('word', 'level')
+        forbidden_words = {w['word']: w['level'] for w in forbidden_words}
 
         for term in terms:
 
@@ -49,6 +52,14 @@ class Command(BaseCommand):
                 search = api.search(term.term, count=kwargs.get('post_count'))
 
                 for post in search:
+
+                    swearwords = get_containing_words(forbidden_words.keys(),
+                                                      post.content)
+                    swearword_level = None
+                    if swearwords:
+                        swearwords = {word: forbidden_words[word] for word
+                                      in swearwords}
+                        swearword_level = min(swearwords.values())
 
                     obj = get_model('social', 'socialpost')(
                         account=account,
@@ -64,6 +75,7 @@ class Command(BaseCommand):
                         post_source=post.post_source,
                         raw_object=pickle.dumps(post._obj),
                         search_term=term,
+                        swearword_level=swearword_level,
                     )
 
                     try:
@@ -78,5 +90,3 @@ class Command(BaseCommand):
                             continue
                     else:
                         self.stdout.write("Post already exists %s (%d %s)" % (post.uid, post.id, post.handle))
-
-
